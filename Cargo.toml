@@ -1,0 +1,15 @@
+[package]
+name = "otkeep"
+version = "0.1.0"
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+anyhow = "1.0.43"
+clap = "2.33.3"
+directories = "3.0.2"
+os_str_bytes = "4.0.0"
+rusqlite = "0.25.3"
+temp-dir = "0.1.11"
+thiserror = "1.0.26"
