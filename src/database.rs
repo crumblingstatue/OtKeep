@@ -159,7 +159,7 @@ impl Database {
         Ok(())
     }
 
-    pub fn get_tree_roots(&mut self) -> anyhow::Result<Vec<PathBuf>> {
+    pub fn get_tree_roots(&self) -> anyhow::Result<Vec<PathBuf>> {
         let mut stmt = self.conn.prepare("SELECT root FROM trees")?;
         let mut vec = Vec::new();
         for root in stmt.query_map([], |row| row.get(0))? {

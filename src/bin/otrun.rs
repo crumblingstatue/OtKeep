@@ -22,6 +22,14 @@ fn try_main() -> anyhow::Result<i32> {
     let root_id = match otkeep::find_root(&db)? {
         Some((id, _)) => id,
         None => {
+            let roots = db.get_tree_roots()?;
+            if !roots.is_empty() {
+                eprintln!("The following trees are established:");
+                for path in roots {
+                    eprintln!("{}", path.display());
+                }
+            }
+            eprintln!();
             bail!("No OtKeep tree root was found. To establish one, use otkeep establish");
         }
     };
