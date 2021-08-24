@@ -67,14 +67,22 @@ fn main() -> anyhow::Result<()> {
 
     let db = otkeep::load_db()?;
     let opt_root = otkeep::find_root(&db)?;
-    if name == "establish" {
-        cmd::establish(&db).context("Failed to establish OtKeep root")?;
-        eprintln!("Established {}", std::env::current_dir()?.display());
-        return Ok(());
+    match name {
+        "list-trees" => {
+            cmd::list_trees(&db)?;
+            return Ok(());
+        }
+        "establish" => {
+            cmd::establish(&db).context("Failed to establish OtKeep root")?;
+            eprintln!("Established {}", std::env::current_dir()?.display());
+            return Ok(());
+        }
+        _ => {}
     }
     let (root_id, root_path) = match opt_root {
         Some(root) => root,
         None => {
+            otkeep::print_established_trees(&db)?;
             bail!("No OtKeep tree root was found. To establish one, use otkeep establish");
         }
     };
@@ -94,7 +102,6 @@ fn main() -> anyhow::Result<()> {
             cmd::unestablish(&mut app).context("Failed to unestablish current directory")?;
             eprintln!("Unestablished {}", root_path.display());
         }
-        "list-trees" => cmd::list_trees(&mut app)?,
         _ => {
             bail!("Invalid subcommand: '{}'", name);
         }
@@ -162,9 +169,9 @@ mod cmd {
         Ok(())
     }
 
-    pub fn list_trees(ctx: &mut AppContext) -> anyhow::Result<()> {
+    pub fn list_trees(db: &Database) -> anyhow::Result<()> {
         let mut any = false;
-        for root_path in ctx.db.get_tree_roots()? {
+        for root_path in db.get_tree_roots()? {
             eprintln!("{}", root_path.display());
             any = true;
         }
