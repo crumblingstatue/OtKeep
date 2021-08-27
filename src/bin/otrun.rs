@@ -1,10 +1,7 @@
 use std::ffi::OsStr;
 
 use anyhow::{bail, Context};
-use otkeep::{
-    database::{NoSuchScriptForCurrentTree, ScriptInfo},
-    AppContext,
-};
+use otkeep::{database::NoSuchScriptForCurrentTree, AppContext};
 
 fn main() {
     match try_main() {
@@ -31,7 +28,7 @@ fn try_main() -> anyhow::Result<i32> {
     let cmd_name = match args.next() {
         Some(arg) => arg,
         None => {
-            list_scripts(&mut app)?;
+            otkeep::list_scripts(&mut app)?;
             eprintln!("\nFor more options, try otkeep",);
             return Ok(1);
         }
@@ -54,29 +51,11 @@ fn run(
         Err(e) => match e.downcast_ref::<NoSuchScriptForCurrentTree>() {
             Some(_) => {
                 eprintln!("No script named '{}' for the current tree.\n", name);
-                list_scripts(ctx)?;
+                otkeep::list_scripts(ctx)?;
                 eprintln!("\nFor more options, try otkeep");
                 Ok(1)
             }
             None => Err(e),
         },
     }
-}
-
-pub fn list_scripts(ctx: &mut AppContext) -> anyhow::Result<()> {
-    let scripts = ctx.db.scripts_for_tree(ctx.root_id)?;
-    if scripts.is_empty() {
-        eprintln!("No scripts have been added yet. To add one, use otkeep add.");
-    } else {
-        eprintln!("The following scripts are available:\n");
-        for ScriptInfo { name, description } in scripts {
-            eprintln!(
-                "{}{}{}",
-                name,
-                if description.is_empty() { "" } else { " - " },
-                description
-            );
-        }
-    }
-    Ok(())
 }

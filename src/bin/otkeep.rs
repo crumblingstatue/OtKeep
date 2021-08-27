@@ -5,7 +5,6 @@ use otkeep::AppContext;
 fn main() -> anyhow::Result<()> {
     let matches = App::new("otkeep")
         .about("Out of tree keeper")
-        .setting(clap::AppSettings::SubcommandRequiredElseHelp)
         .subcommand(
             SubCommand::with_name("add")
                 .about("Adds a script for the current tree")
@@ -67,11 +66,29 @@ fn main() -> anyhow::Result<()> {
                 .arg(Arg::with_name("name").required(true)),
         )
         .get_matches();
-    let (name, matches) = matches.subcommand();
-    let matches = matches.context("No subcommand matches")?;
-
     let db = otkeep::load_db()?;
     let opt_root = otkeep::find_root(&db)?;
+    let (name, matches) = matches.subcommand();
+    let matches = match matches {
+        Some(matches) => matches,
+        None => match opt_root {
+            Some(root) => {
+                otkeep::list_scripts(&mut AppContext {
+                    db,
+                    root_id: root.0,
+                })?;
+                help_msg();
+                return Ok(());
+            }
+            None => {
+                eprintln!("The following trees are available:");
+                cmd::list_trees(&db)?;
+                help_msg();
+                return Ok(());
+            }
+        },
+    };
+
     match name {
         "list-trees" => {
             cmd::list_trees(&db)?;
@@ -113,6 +130,10 @@ fn main() -> anyhow::Result<()> {
         }
     }
     Ok(())
+}
+
+fn help_msg() {
+    eprintln!("\nType otkeep --help for help.");
 }
 
 mod cmd {

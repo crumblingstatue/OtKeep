@@ -4,6 +4,8 @@ use anyhow::Context;
 use database::Database;
 use directories::ProjectDirs;
 
+use crate::database::ScriptInfo;
+
 pub mod database;
 mod fs_util;
 mod run;
@@ -62,4 +64,22 @@ fn script_ext() -> &'static str {
 #[cfg(target_os = "windows")]
 fn script_ext() -> &'static str {
     "bat"
+}
+
+pub fn list_scripts(ctx: &mut AppContext) -> anyhow::Result<()> {
+    let scripts = ctx.db.scripts_for_tree(ctx.root_id)?;
+    if scripts.is_empty() {
+        eprintln!("No scripts have been added yet. To add one, use otkeep add.");
+    } else {
+        eprintln!("The following scripts are available:\n");
+        for ScriptInfo { name, description } in scripts {
+            eprintln!(
+                "{}{}{}",
+                name,
+                if description.is_empty() { "" } else { " - " },
+                description
+            );
+        }
+    }
+    Ok(())
 }
