@@ -33,7 +33,7 @@ want to commit. Here are some examples:
 
 You don't want to commit these kinds of scripts into a repository, because they are highly specific to you.
 
-What about just adding them .gitignore or such?
+What about just adding them to .gitignore or such?
 The problem with that is that they can be easily destroyed by a git clean -dfx, or reclone of the repository.
 And they still dirty up the working tree. They are not organized nicely.
 
