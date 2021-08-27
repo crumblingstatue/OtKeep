@@ -86,23 +86,32 @@ impl Database {
         name: &str,
         args: impl Iterator<Item = impl AsRef<OsStr>>,
     ) -> anyhow::Result<ExitStatus> {
+        match self.query_script_id_from_name(tree_id, name)? {
+            Some(id) => {
+                let script = self.fetch_script_body(id)?;
+                let status = crate::run::run_script(&script, args)?;
+                Ok(status)
+            }
+            None => bail!(NoSuchScriptForCurrentTree),
+        }
+    }
+
+    fn fetch_script_body(&self, id: i64) -> Result<Vec<u8>, anyhow::Error> {
+        let mut stmt = self
+            .conn
+            .prepare("SELECT body FROM scripts WHERE _rowid_=?")?;
+        let script: Vec<u8> = stmt.query_row(params![id], |row| row.get(0))?;
+        Ok(script)
+    }
+
+    fn query_script_id_from_name(&self, tree_id: i64, name: &str) -> anyhow::Result<Option<i64>> {
         let mut stmt = self
             .conn
             .prepare("SELECT script_id FROM pairings WHERE tree_id=?1 AND name=?2")?;
         let script_id: Option<i64> = stmt
             .query_row(params![tree_id, name], |row| row.get(0))
             .optional()?;
-        match script_id {
-            Some(id) => {
-                let mut stmt = self
-                    .conn
-                    .prepare("SELECT body FROM scripts WHERE _rowid_=?")?;
-                let script: Vec<u8> = stmt.query_row(params![id], |row| row.get(0))?;
-                let status = crate::run::run_script(&script, args)?;
-                Ok(status)
-            }
-            None => bail!(NoSuchScriptForCurrentTree),
-        }
+        Ok(script_id)
     }
 
     pub fn scripts_for_tree(&self, tree_id: i64) -> anyhow::Result<Vec<ScriptInfo>> {
@@ -167,6 +176,13 @@ impl Database {
             vec.push(PathBuf::from_raw_vec(root)?);
         }
         Ok(vec)
+    }
+
+    pub fn get_script_by_name(&self, tree_id: i64, name: &str) -> anyhow::Result<Vec<u8>> {
+        match self.query_script_id_from_name(tree_id, name)? {
+            Some(id) => Ok(self.fetch_script_body(id)?),
+            None => bail!("No such script"),
+        }
     }
 }
 

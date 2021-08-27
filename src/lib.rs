@@ -47,3 +47,19 @@ pub fn print_established_trees(db: &Database) -> anyhow::Result<()> {
     eprintln!();
     Ok(())
 }
+
+pub fn checkout(name: &str, ctx: &mut AppContext) -> anyhow::Result<()> {
+    let script = ctx.db.get_script_by_name(ctx.root_id, name)?;
+    std::fs::write(format!("{}.{}", name, script_ext()), script)?;
+    Ok(())
+}
+
+#[cfg(not(target_os = "windows"))]
+fn script_ext() -> &'static str {
+    "sh"
+}
+
+#[cfg(target_os = "windows")]
+fn script_ext() -> &'static str {
+    "bat"
+}

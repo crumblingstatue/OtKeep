@@ -61,6 +61,11 @@ fn main() -> anyhow::Result<()> {
         .subcommand(
             SubCommand::with_name("list-trees").about("List all the trees kept in the database"),
         )
+        .subcommand(
+            SubCommand::with_name("checkout")
+                .about("Check out a copy of a script as a file")
+                .arg(Arg::with_name("name").required(true)),
+        )
         .get_matches();
     let (name, matches) = matches.subcommand();
     let matches = matches.context("No subcommand matches")?;
@@ -102,6 +107,7 @@ fn main() -> anyhow::Result<()> {
             cmd::unestablish(&mut app).context("Failed to unestablish current directory")?;
             eprintln!("Unestablished {}", root_path.display());
         }
+        "checkout" => cmd::checkout(matches, &mut app).context("Checkout failed")?,
         _ => {
             bail!("Invalid subcommand: '{}'", name);
         }
@@ -179,6 +185,12 @@ mod cmd {
             eprintln!("Looks like no trees have been added yet.");
             eprintln!("Find a tree you'd like to add and type `otkeep establish`.");
         }
+        Ok(())
+    }
+
+    pub fn checkout(matches: &ArgMatches, ctx: &mut AppContext) -> anyhow::Result<()> {
+        let name_arg = matches.value_of("name").context("Missing script name")?;
+        otkeep::checkout(name_arg, ctx)?;
         Ok(())
     }
 }

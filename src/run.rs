@@ -3,6 +3,8 @@ use std::{
     process::{Command, ExitStatus},
 };
 
+use crate::script_ext;
+
 pub(crate) fn run_script(
     script: &[u8],
     args: impl Iterator<Item = impl AsRef<OsStr>>,
@@ -14,16 +16,6 @@ pub(crate) fn run_script(
 }
 
 type CmdResult = std::io::Result<ExitStatus>;
-
-#[cfg(not(target_os = "windows"))]
-fn script_ext() -> &'static str {
-    "sh"
-}
-
-#[cfg(target_os = "windows")]
-fn script_ext() -> &'static str {
-    "bat"
-}
 
 #[cfg(not(target_os = "windows"))]
 fn script_command<F: FnOnce(&mut Command) -> CmdResult>(f: F) -> CmdResult {
