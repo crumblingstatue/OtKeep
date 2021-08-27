@@ -51,7 +51,7 @@ To add a script, use `otkeep add`.
 For example, to add your windows cross-build script called `build_win.sh`, do `otkeep add build-win build_win.sh`.
 
 ### Running scripts
-To run script you added, be in the tree you added it to, and simply run `otrun` with the script name as argument.
+To run a script you added, be in the tree you added it to, and simply run `otrun` with the script name as argument.
 For the aformentioned `build-win` example, you would run `otrun build-win`.
 `otrun` forwards all arguments to the script.
 
