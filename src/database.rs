@@ -71,6 +71,19 @@ impl Database {
         Ok(())
     }
 
+    pub fn update_script(&mut self, tree_id: i64, name: &str, body: Vec<u8>) -> anyhow::Result<()> {
+        match self.query_script_id_from_name(tree_id, name)? {
+            Some(script_id) => {
+                self.conn.execute(
+                    "UPDATE scripts SET body=?1 WHERE _rowid_=?2",
+                    params![body, script_id],
+                )?;
+            }
+            None => bail!("No such script"),
+        }
+        Ok(())
+    }
+
     /// Removes a script with `name` from the current tree and returns whether it actually
     /// removed anything
     pub fn remove_script(&mut self, tree_id: i64, name: &str) -> anyhow::Result<bool> {

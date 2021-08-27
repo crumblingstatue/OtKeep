@@ -65,6 +65,27 @@ fn main() -> anyhow::Result<()> {
                 .about("Check out a copy of a script as a file")
                 .arg(Arg::with_name("name").required(true)),
         )
+        .subcommand(
+            SubCommand::with_name("update")
+                .about("Update a script with new contents")
+                .arg(
+                    Arg::with_name("name")
+                        .help("The name of the script")
+                        .required(true),
+                )
+                .arg(
+                    Arg::with_name("script")
+                        .required(true)
+                        .help("A path to a script or an inline script"),
+                )
+                .arg(
+                    Arg::with_name("inline")
+                        .short("i")
+                        .long("--inline")
+                        .takes_value(false)
+                        .help("Add an inline script instead of loading from a file"),
+                ),
+        )
         .get_matches();
     let db = otkeep::load_db()?;
     let opt_root = otkeep::find_root(&db)?;
@@ -125,6 +146,7 @@ fn main() -> anyhow::Result<()> {
             eprintln!("Unestablished {}", root_path.display());
         }
         "checkout" => cmd::checkout(matches, &mut app).context("Checkout failed")?,
+        "update" => cmd::update(matches, &mut app).context("Update failed")?,
         _ => {
             bail!("Invalid subcommand: '{}'", name);
         }
@@ -212,6 +234,21 @@ mod cmd {
     pub fn checkout(matches: &ArgMatches, ctx: &mut AppContext) -> anyhow::Result<()> {
         let name_arg = matches.value_of("name").context("Missing script name")?;
         otkeep::checkout(name_arg, ctx)?;
+        Ok(())
+    }
+
+    pub fn update(matches: &ArgMatches, ctx: &mut AppContext) -> anyhow::Result<()> {
+        let script_arg = matches.value_of("script").context("Missing script file")?;
+        let name = matches.value_of("name").context("Missing name")?;
+        let inline = matches.is_present("inline");
+        let curr_dir = std::env::current_dir()?;
+        let script_body = if inline {
+            script_arg.as_bytes().to_vec()
+        } else {
+            let absolute_path = std::fs::canonicalize(curr_dir.join(script_arg))?;
+            std::fs::read(&absolute_path)?
+        };
+        ctx.db.update_script(ctx.root_id, name, script_body)?;
         Ok(())
     }
 }
