@@ -8,7 +8,7 @@ pub(crate) fn run_script(
     args: impl Iterator<Item = impl AsRef<OsStr>>,
 ) -> anyhow::Result<ExitStatus> {
     let temp_dir = temp_dir::TempDir::new()?;
-    let path = temp_dir.child(script_name());
+    let path = temp_dir.child(format!("script.{}", script_ext()));
     std::fs::write(&path, script)?;
     Ok(script_command(|cmd| cmd.arg(path).args(args).status())?)
 }
@@ -16,13 +16,13 @@ pub(crate) fn run_script(
 type CmdResult = std::io::Result<ExitStatus>;
 
 #[cfg(not(target_os = "windows"))]
-fn script_name() -> &'static str {
-    "script.sh"
+fn script_ext() -> &'static str {
+    "sh"
 }
 
 #[cfg(target_os = "windows")]
-fn script_name() -> &'static str {
-    "script.bat"
+fn script_ext() -> &'static str {
+    "bat"
 }
 
 #[cfg(not(target_os = "windows"))]
