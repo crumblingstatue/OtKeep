@@ -1,4 +1,7 @@
-use std::path::{Path, PathBuf};
+use std::{
+    io::Write,
+    path::{Path, PathBuf},
+};
 
 use anyhow::Context;
 use database::Database;
@@ -53,6 +56,12 @@ pub fn print_established_trees(db: &Database) -> anyhow::Result<()> {
 pub fn checkout(name: &str, ctx: &mut AppContext) -> anyhow::Result<()> {
     let script = ctx.db.get_script_by_name(ctx.root_id, name)?;
     std::fs::write(format!("{}.{}", name, script_ext()), script)?;
+    Ok(())
+}
+
+pub fn cat(name: &str, ctx: &mut AppContext) -> anyhow::Result<()> {
+    let script = ctx.db.get_script_by_name(ctx.root_id, name)?;
+    std::io::stdout().write_all(&script)?;
     Ok(())
 }
 

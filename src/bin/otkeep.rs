@@ -66,6 +66,11 @@ fn main() -> anyhow::Result<()> {
                 .arg(Arg::with_name("name").required(true)),
         )
         .subcommand(
+            SubCommand::with_name("cat")
+                .about("Concatenate a script to standard out")
+                .arg(Arg::with_name("name").required(true)),
+        )
+        .subcommand(
             SubCommand::with_name("update")
                 .about("Update a script with new contents")
                 .arg(
@@ -146,6 +151,7 @@ fn main() -> anyhow::Result<()> {
             eprintln!("Unestablished {}", root_path.display());
         }
         "checkout" => cmd::checkout(matches, &mut app).context("Checkout failed")?,
+        "cat" => cmd::cat(matches, &mut app).context("Concat failed")?,
         "update" => cmd::update(matches, &mut app).context("Update failed")?,
         _ => {
             bail!("Invalid subcommand: '{}'", name);
@@ -234,6 +240,12 @@ mod cmd {
     pub fn checkout(matches: &ArgMatches, ctx: &mut AppContext) -> anyhow::Result<()> {
         let name_arg = matches.value_of("name").context("Missing script name")?;
         otkeep::checkout(name_arg, ctx)?;
+        Ok(())
+    }
+
+    pub fn cat(matches: &ArgMatches, ctx: &mut AppContext) -> anyhow::Result<()> {
+        let name_arg = matches.value_of("name").context("Missing script name")?;
+        otkeep::cat(name_arg, ctx)?;
         Ok(())
     }
 
