@@ -172,19 +172,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "692fcb63b64b1758029e0a96ee63e049ce8c5948587f2f7208df04625e5f6b56"
 
 [[package]]
-name = "os_str_bytes"
-version = "4.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "749d26d16b126e50c34d1e662259aa47ac548bc62f0822e91d81810f3b9c01fb"
-
-[[package]]
 name = "otkeep"
 version = "0.1.0"
 dependencies = [
  "anyhow",
  "clap",
  "directories",
- "os_str_bytes",
  "rusqlite",
  "temp-dir",
  "thiserror",

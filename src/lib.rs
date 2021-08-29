@@ -11,6 +11,7 @@ use crate::database::ScriptInfo;
 
 pub mod database;
 mod fs_util;
+mod path_conv;
 mod run;
 
 /// Contains the settings and the script database.

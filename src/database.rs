@@ -6,10 +6,9 @@ use std::{
 use thiserror::Error;
 
 use anyhow::bail;
-use os_str_bytes::{OsStrBytes, OsStringBytes};
 use rusqlite::{params, Connection, OptionalExtension};
 
-use crate::fs_util::ensure_dir_exists;
+use crate::{fs_util::ensure_dir_exists, path_conv};
 
 /// Contains all the scripts
 pub struct Database {
@@ -149,12 +148,12 @@ impl Database {
             .conn
             .prepare("SELECT _rowid_ FROM trees where root=?")?;
         Ok(stmt
-            .query_row(params![path.to_raw_bytes()], |row| row.get(0))
+            .query_row(params![path_conv::to_raw(path)], |row| row.get(0))
             .optional()?)
     }
 
     pub fn add_new_tree(&self, path: &Path) -> anyhow::Result<()> {
-        let raw = path.to_raw_bytes();
+        let raw = path_conv::to_raw(path);
         self.conn
             .execute("INSERT INTO trees (root) VALUES (?)", params![raw])?;
         Ok(())
@@ -186,7 +185,7 @@ impl Database {
         let mut vec = Vec::new();
         for root in stmt.query_map([], |row| row.get(0))? {
             let root: Vec<u8> = root?;
-            vec.push(PathBuf::from_raw_vec(root)?);
+            vec.push(path_conv::from_raw(&root)?);
         }
         Ok(vec)
     }
