@@ -40,10 +40,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "base64"
+version = "0.10.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0b25d992356d2eb0ed82172f5248873db5560c4721f564b13cb5193bda5e668e"
+dependencies = [
+ "byteorder",
+]
+
+[[package]]
 name = "bitflags"
 version = "1.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bef38d45163c2f1dde094a7dfd33ccf595c92905c8f8f4fdc18d06fb1037718a"
+
+[[package]]
+name = "byteorder"
+version = "1.4.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "14c189c53d098945499cdfa7ecc63567cf3886b3332b312a5b4585d8d3a6a610"
 
 [[package]]
 name = "cc"
@@ -172,22 +187,25 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "692fcb63b64b1758029e0a96ee63e049ce8c5948587f2f7208df04625e5f6b56"
 
 [[package]]
-name = "os_str_bytes"
-version = "4.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "749d26d16b126e50c34d1e662259aa47ac548bc62f0822e91d81810f3b9c01fb"
-
-[[package]]
 name = "otkeep"
 version = "0.1.0"
 dependencies = [
  "anyhow",
  "clap",
  "directories",
- "os_str_bytes",
+ "paths-as-strings",
  "rusqlite",
  "temp-dir",
  "thiserror",
+]
+
+[[package]]
+name = "paths-as-strings"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7963201bed34799ddd0f54a2e1e4c5082313ca260db118822109f344f13b285c"
+dependencies = [
+ "base64",
 ]
 
 [[package]]

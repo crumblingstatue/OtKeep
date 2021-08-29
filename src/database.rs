@@ -6,7 +6,6 @@ use std::{
 use thiserror::Error;
 
 use anyhow::bail;
-use os_str_bytes::{OsStrBytes, OsStringBytes};
 use rusqlite::{params, Connection, OptionalExtension};
 
 use crate::fs_util::ensure_dir_exists;
@@ -36,7 +35,7 @@ impl Database {
         )?;
         tx.execute(
             "CREATE TABLE IF NOT EXISTS trees (
-                root BLOB NOT NULL UNIQUE
+                root TEXT NOT NULL UNIQUE
             )",
             [],
         )?;
@@ -149,14 +148,16 @@ impl Database {
             .conn
             .prepare("SELECT _rowid_ FROM trees where root=?")?;
         Ok(stmt
-            .query_row(params![path.to_raw_bytes()], |row| row.get(0))
+            .query_row(params![paths_as_strings::encode_path(&path)], |row| {
+                row.get(0)
+            })
             .optional()?)
     }
 
     pub fn add_new_tree(&self, path: &Path) -> anyhow::Result<()> {
-        let raw = path.to_raw_bytes();
+        let str = paths_as_strings::encode_path(&path);
         self.conn
-            .execute("INSERT INTO trees (root) VALUES (?)", params![raw])?;
+            .execute("INSERT INTO trees (root) VALUES (?)", params![str])?;
         Ok(())
     }
 
@@ -185,8 +186,9 @@ impl Database {
         let mut stmt = self.conn.prepare("SELECT root FROM trees")?;
         let mut vec = Vec::new();
         for root in stmt.query_map([], |row| row.get(0))? {
-            let root: Vec<u8> = root?;
-            vec.push(PathBuf::from_raw_vec(root)?);
+            let root: String = root?;
+            let pb = paths_as_strings::decode_path(&root)?;
+            vec.push(pb);
         }
         Ok(vec)
     }
