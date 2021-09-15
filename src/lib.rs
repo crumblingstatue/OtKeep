@@ -65,6 +65,10 @@ pub fn cat(name: &str, ctx: &mut AppContext) -> anyhow::Result<()> {
     Ok(())
 }
 
+pub fn rename_script(old_name: &str, new_name: &str, ctx: &mut AppContext) -> anyhow::Result<()> {
+    ctx.db.rename_script(old_name, new_name)
+}
+
 #[cfg(not(target_os = "windows"))]
 fn script_ext() -> &'static str {
     "sh"

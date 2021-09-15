@@ -91,6 +91,12 @@ fn main() -> anyhow::Result<()> {
                         .help("Add an inline script instead of loading from a file"),
                 ),
         )
+        .subcommand(
+            SubCommand::with_name("rename")
+                .about("Rename a command")
+                .arg(Arg::with_name("old_name").required(true))
+                .arg(Arg::with_name("new_name").required(true)),
+        )
         .get_matches();
     let db = otkeep::load_db()?;
     let opt_root = otkeep::find_root(&db)?;
@@ -140,6 +146,7 @@ fn main() -> anyhow::Result<()> {
         "add" => cmd::add(matches, &mut app).context("Failed to add script")?,
         "mod" => cmd::mod_(matches, &mut app).context("Mod command failed")?,
         "remove" => cmd::remove(matches, &mut app).context("Failed to remove script")?,
+        "rename" => cmd::rename(matches, &mut app).context("Failed to rename script")?,
         "unestablish" => {
             if std::env::current_dir()? != root_path {
                 eprintln!("The current directory is not the root.");
@@ -261,6 +268,13 @@ mod cmd {
             std::fs::read(&absolute_path)?
         };
         ctx.db.update_script(ctx.root_id, name, script_body)?;
+        Ok(())
+    }
+
+    pub(crate) fn rename(matches: &ArgMatches, ctx: &mut AppContext) -> anyhow::Result<()> {
+        let old_name = matches.value_of("old_name").context("Missing old name")?;
+        let new_name = matches.value_of("new_name").context("Missing new name")?;
+        otkeep::rename_script(old_name, new_name, ctx)?;
         Ok(())
     }
 }

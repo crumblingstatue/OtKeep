@@ -199,6 +199,14 @@ impl Database {
             None => bail!("No such script"),
         }
     }
+
+    pub fn rename_script(&self, old_name: &str, new_name: &str) -> Result<(), anyhow::Error> {
+        self.conn.execute(
+            "UPDATE pairings SET name=?1 WHERE name=?2",
+            params![new_name, old_name],
+        )?;
+        Ok(())
+    }
 }
 
 fn query_script_by_body(conn: &Connection, body: &[u8]) -> anyhow::Result<Option<i64>> {
