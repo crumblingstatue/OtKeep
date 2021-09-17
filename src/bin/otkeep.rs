@@ -97,6 +97,8 @@ fn main() -> anyhow::Result<()> {
                 .arg(Arg::with_name("old_name").required(true))
                 .arg(Arg::with_name("new_name").required(true)),
         )
+        .subcommand(SubCommand::with_name("save").arg(Arg::with_name("file").required(true)))
+        .subcommand(SubCommand::with_name("restore").arg(Arg::with_name("file")))
         .get_matches();
     let db = otkeep::load_db()?;
     let opt_root = otkeep::find_root(&db)?;
@@ -160,6 +162,8 @@ fn main() -> anyhow::Result<()> {
         "checkout" => cmd::checkout(matches, &mut app).context("Checkout failed")?,
         "cat" => cmd::cat(matches, &mut app).context("Concat failed")?,
         "update" => cmd::update(matches, &mut app).context("Update failed")?,
+        "save" => cmd::save(matches, &mut app).context("File save failed")?,
+        "restore" => cmd::restore(matches, &mut app).context("File restore failed")?,
         _ => {
             bail!("Invalid subcommand: '{}'", name);
         }
@@ -275,6 +279,26 @@ mod cmd {
         let old_name = matches.value_of("old_name").context("Missing old name")?;
         let new_name = matches.value_of("new_name").context("Missing new name")?;
         otkeep::rename_script(old_name, new_name, ctx)?;
+        Ok(())
+    }
+
+    pub(crate) fn save(matches: &ArgMatches, app: &mut AppContext) -> anyhow::Result<()> {
+        let path = matches.value_of("file").context("Missing file path")?;
+        let bytes = std::fs::read(path)?;
+        otkeep::add_file(app, path, bytes)?;
+        Ok(())
+    }
+
+    pub(crate) fn restore(matches: &ArgMatches, app: &mut AppContext) -> anyhow::Result<()> {
+        let path = match matches.value_of("file") {
+            Some(path) => path,
+            None => {
+                otkeep::list_files(app)?;
+                return Ok(());
+            }
+        };
+        let bytes = otkeep::get_file(app, path)?;
+        std::fs::write(path, bytes)?;
         Ok(())
     }
 }

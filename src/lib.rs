@@ -96,3 +96,30 @@ pub fn list_scripts(ctx: &mut AppContext) -> anyhow::Result<()> {
     }
     Ok(())
 }
+
+pub fn list_files(ctx: &mut AppContext) -> anyhow::Result<()> {
+    let files = ctx.db.files_for_tree(ctx.root_id)?;
+    if files.is_empty() {
+        eprintln!("No files have been saved yet. To add one, use otkeep save.");
+    } else {
+        eprintln!("The following files are available:\n");
+        for ScriptInfo { name, description } in files {
+            eprintln!(
+                "{}{}{}",
+                name,
+                if description.is_empty() { "" } else { " - " },
+                description
+            );
+        }
+    }
+    Ok(())
+}
+
+pub fn add_file(ctx: &mut AppContext, path: &str, bytes: Vec<u8>) -> anyhow::Result<()> {
+    ctx.db.add_file(ctx.root_id, path, bytes)?;
+    Ok(())
+}
+
+pub fn get_file(ctx: &mut AppContext, path: &str) -> anyhow::Result<Vec<u8>> {
+    ctx.db.get_file_by_name(ctx.root_id, path)
+}

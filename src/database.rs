@@ -10,7 +10,7 @@ use rusqlite::{params, Connection, OptionalExtension};
 
 use crate::fs_util::ensure_dir_exists;
 
-/// Contains all the scripts
+/// Contains all the blobs
 pub struct Database {
     conn: Connection,
 }
@@ -27,27 +27,29 @@ impl Database {
         ensure_dir_exists(dir)?;
         let mut conn = Connection::open(dir.join(DB_FILENAME))?;
         let tx = conn.transaction()?;
-        tx.execute(
-            "CREATE TABLE IF NOT EXISTS scripts (
-            body BLOB NOT NULL UNIQUE
-        )",
-            [],
-        )?;
-        tx.execute(
-            "CREATE TABLE IF NOT EXISTS trees (
+        tx.execute_batch(
+            "
+            CREATE TABLE IF NOT EXISTS blobs (
+                body BLOB NOT NULL UNIQUE
+            );
+            CREATE TABLE IF NOT EXISTS trees (
                 root TEXT NOT NULL UNIQUE
-            )",
-            [],
-        )?;
-        tx.execute(
-            "CREATE TABLE IF NOT EXISTS pairings (
-            tree_id   INTEGER NOT NULL,
-            script_id INTEGER NOT NULL,
-            name      TEXT NOT NULL,
-            desc      TEXT,
-            UNIQUE(tree_id, name)
-        )",
-            [],
+            );
+            CREATE TABLE IF NOT EXISTS tree_scripts (
+                tree_id INTEGER NOT NULL,
+                blob_id INTEGER NOT NULL,
+                name    TEXT NOT NULL,
+                desc    TEXT,
+                UNIQUE(tree_id, name)
+            );
+            CREATE TABLE IF NOT EXISTS tree_files (
+                tree_id INTEGER NOT NULL,
+                blob_id INTEGER NOT NULL,
+                name    TEXT NOT NULL,
+                desc    TEXT,
+                UNIQUE(tree_id, name)
+            );
+            ",
         )?;
         tx.commit()?;
         Ok(Self { conn })
@@ -55,16 +57,16 @@ impl Database {
 
     pub fn add_script(&mut self, tree_id: i64, name: &str, body: Vec<u8>) -> anyhow::Result<()> {
         let tx = self.conn.transaction()?;
-        let script_id = match query_script_by_body(&tx, &body)? {
+        let blob_id = match query_blob_by_body(&tx, &body)? {
             Some(id) => id,
             None => {
-                tx.execute("INSERT INTO scripts (body) VALUES (?)", params![body])?;
+                tx.execute("INSERT INTO blobs (body) VALUES (?)", params![body])?;
                 tx.last_insert_rowid()
             }
         };
         tx.execute(
-            "INSERT INTO pairings (tree_id, name, script_id) VALUES (?1, ?2, ?3)",
-            params![tree_id, name, script_id],
+            "INSERT INTO tree_scripts (tree_id, name, blob_id) VALUES (?1, ?2, ?3)",
+            params![tree_id, name, blob_id],
         )?;
         tx.commit()?;
         Ok(())
@@ -72,10 +74,10 @@ impl Database {
 
     pub fn update_script(&mut self, tree_id: i64, name: &str, body: Vec<u8>) -> anyhow::Result<()> {
         match self.query_script_id_from_name(tree_id, name)? {
-            Some(script_id) => {
+            Some(blob_id) => {
                 self.conn.execute(
-                    "UPDATE scripts SET body=?1 WHERE _rowid_=?2",
-                    params![body, script_id],
+                    "UPDATE blobs SET body=?1 WHERE _rowid_=?2",
+                    params![body, blob_id],
                 )?;
             }
             None => bail!("No such script"),
@@ -87,7 +89,7 @@ impl Database {
     /// removed anything
     pub fn remove_script(&mut self, tree_id: i64, name: &str) -> anyhow::Result<bool> {
         Ok(self.conn.execute(
-            "DELETE FROM pairings WHERE tree_id=?1 AND name=?2",
+            "DELETE FROM tree_scripts WHERE tree_id=?1 AND name=?2",
             params![tree_id, name],
         )? > 0)
     }
@@ -100,7 +102,7 @@ impl Database {
     ) -> anyhow::Result<ExitStatus> {
         match self.query_script_id_from_name(tree_id, name)? {
             Some(id) => {
-                let script = self.fetch_script_body(id)?;
+                let script = self.fetch_blob(id)?;
                 let status = crate::run::run_script(&script, args)?;
                 Ok(status)
             }
@@ -108,28 +110,55 @@ impl Database {
         }
     }
 
-    fn fetch_script_body(&self, id: i64) -> Result<Vec<u8>, anyhow::Error> {
+    fn fetch_blob(&self, id: i64) -> Result<Vec<u8>, anyhow::Error> {
         let mut stmt = self
             .conn
-            .prepare("SELECT body FROM scripts WHERE _rowid_=?")?;
-        let script: Vec<u8> = stmt.query_row(params![id], |row| row.get(0))?;
-        Ok(script)
+            .prepare("SELECT body FROM blobs WHERE _rowid_=?")?;
+        let blob: Vec<u8> = stmt.query_row(params![id], |row| row.get(0))?;
+        Ok(blob)
     }
 
     fn query_script_id_from_name(&self, tree_id: i64, name: &str) -> anyhow::Result<Option<i64>> {
         let mut stmt = self
             .conn
-            .prepare("SELECT script_id FROM pairings WHERE tree_id=?1 AND name=?2")?;
-        let script_id: Option<i64> = stmt
+            .prepare("SELECT blob_id FROM tree_scripts WHERE tree_id=?1 AND name=?2")?;
+        let blob_id: Option<i64> = stmt
             .query_row(params![tree_id, name], |row| row.get(0))
             .optional()?;
-        Ok(script_id)
+        Ok(blob_id)
+    }
+
+    fn query_file_id_from_name(&self, tree_id: i64, name: &str) -> anyhow::Result<Option<i64>> {
+        let mut stmt = self
+            .conn
+            .prepare("SELECT blob_id FROM tree_files WHERE tree_id=?1 AND name=?2")?;
+        let blob_id: Option<i64> = stmt
+            .query_row(params![tree_id, name], |row| row.get(0))
+            .optional()?;
+        Ok(blob_id)
     }
 
     pub fn scripts_for_tree(&self, tree_id: i64) -> anyhow::Result<Vec<ScriptInfo>> {
         let mut stmt = self
             .conn
-            .prepare("SELECT name, desc FROM pairings WHERE tree_id=?")?;
+            .prepare("SELECT name, desc FROM tree_scripts WHERE tree_id=?")?;
+        let rows = stmt.query_map(params![tree_id], |row| Ok((row.get(0)?, row.get(1)?)))?;
+        let mut vec = Vec::new();
+        for result in rows {
+            let (name, description) = result?;
+            let description: Option<String> = description;
+            vec.push(ScriptInfo {
+                name,
+                description: description.unwrap_or_else(String::new),
+            });
+        }
+        Ok(vec)
+    }
+
+    pub fn files_for_tree(&self, tree_id: i64) -> anyhow::Result<Vec<ScriptInfo>> {
+        let mut stmt = self
+            .conn
+            .prepare("SELECT name, desc FROM tree_files WHERE tree_id=?")?;
         let rows = stmt.query_map(params![tree_id], |row| Ok((row.get(0)?, row.get(1)?)))?;
         let mut vec = Vec::new();
         for result in rows {
@@ -164,7 +193,7 @@ impl Database {
     pub fn remove_tree(&mut self, tree_id: i64) -> anyhow::Result<()> {
         let tx = self.conn.transaction()?;
         tx.execute("DELETE FROM trees WHERE _rowid_=?", params![tree_id])?;
-        tx.execute("DELETE FROM pairings WHERE tree_id=?", params![tree_id])?;
+        tx.execute("DELETE FROM tree_scripts WHERE tree_id=?", params![tree_id])?;
         tx.commit()?;
         Ok(())
     }
@@ -176,7 +205,7 @@ impl Database {
         desc: &str,
     ) -> anyhow::Result<()> {
         self.conn.execute(
-            "UPDATE pairings SET desc=?1 WHERE tree_id=?2 AND name=?3",
+            "UPDATE tree_scripts SET desc=?1 WHERE tree_id=?2 AND name=?3",
             params![desc, tree_id, name],
         )?;
         Ok(())
@@ -195,22 +224,46 @@ impl Database {
 
     pub fn get_script_by_name(&self, tree_id: i64, name: &str) -> anyhow::Result<Vec<u8>> {
         match self.query_script_id_from_name(tree_id, name)? {
-            Some(id) => Ok(self.fetch_script_body(id)?),
+            Some(id) => Ok(self.fetch_blob(id)?),
             None => bail!("No such script"),
+        }
+    }
+
+    pub fn get_file_by_name(&self, tree_id: i64, name: &str) -> anyhow::Result<Vec<u8>> {
+        match self.query_file_id_from_name(tree_id, name)? {
+            Some(id) => Ok(self.fetch_blob(id)?),
+            None => bail!("No such file"),
         }
     }
 
     pub fn rename_script(&self, old_name: &str, new_name: &str) -> Result<(), anyhow::Error> {
         self.conn.execute(
-            "UPDATE pairings SET name=?1 WHERE name=?2",
+            "UPDATE tree_scripts SET name=?1 WHERE name=?2",
             params![new_name, old_name],
         )?;
         Ok(())
     }
+
+    pub fn add_file(&mut self, tree_id: i64, path: &str, bytes: Vec<u8>) -> anyhow::Result<()> {
+        let tx = self.conn.transaction()?;
+        let blob_id = match query_blob_by_body(&tx, &bytes)? {
+            Some(id) => id,
+            None => {
+                tx.execute("INSERT INTO blobs (body) VALUES (?)", params![bytes])?;
+                tx.last_insert_rowid()
+            }
+        };
+        tx.execute(
+            "INSERT INTO tree_files (tree_id, name, blob_id) VALUES (?1, ?2, ?3)",
+            params![tree_id, path, blob_id],
+        )?;
+        tx.commit()?;
+        Ok(())
+    }
 }
 
-fn query_script_by_body(conn: &Connection, body: &[u8]) -> anyhow::Result<Option<i64>> {
-    let mut stmt = conn.prepare("SELECT _rowid_ FROM scripts WHERE body=?")?;
+fn query_blob_by_body(conn: &Connection, body: &[u8]) -> anyhow::Result<Option<i64>> {
+    let mut stmt = conn.prepare("SELECT _rowid_ FROM blobs WHERE body=?")?;
     Ok(stmt.query_row(params![body], |row| row.get(0)).optional()?)
 }
 
