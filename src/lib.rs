@@ -84,7 +84,7 @@ pub fn list_scripts(ctx: &AppContext) -> anyhow::Result<()> {
     if scripts.is_empty() {
         eprintln!("No scripts have been added yet. To add one, use otkeep add.");
     } else {
-        eprintln!("The following scripts are available:\n");
+        eprintln!("The following scripts are available (otrun):\n");
         for ScriptInfo { name, description } in scripts {
             eprintln!(
                 "{}{}{}",
@@ -102,7 +102,7 @@ pub fn list_files(ctx: &AppContext) -> anyhow::Result<()> {
     if files.is_empty() {
         eprintln!("No files have been saved yet. To add one, use otkeep save.");
     } else {
-        eprintln!("The following files are available:\n");
+        eprintln!("The following files are available (otkeep restore):\n");
         for ScriptInfo { name, description } in files {
             eprintln!(
                 "{}{}{}",
