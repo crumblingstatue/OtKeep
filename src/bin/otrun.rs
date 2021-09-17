@@ -28,7 +28,7 @@ fn try_main() -> anyhow::Result<i32> {
     let cmd_name = match args.next() {
         Some(arg) => arg,
         None => {
-            otkeep::list_scripts(&mut app)?;
+            otkeep::list_scripts(&app)?;
             eprintln!("\nFor more options, try otkeep",);
             return Ok(1);
         }

@@ -107,10 +107,13 @@ fn main() -> anyhow::Result<()> {
         Some(matches) => matches,
         None => match opt_root {
             Some(root) => {
-                otkeep::list_scripts(&mut AppContext {
+                let ctx = &AppContext {
                     db,
                     root_id: root.0,
-                })?;
+                };
+                otkeep::list_scripts(ctx)?;
+                println!();
+                otkeep::list_files(ctx)?;
                 help_msg();
                 return Ok(());
             }

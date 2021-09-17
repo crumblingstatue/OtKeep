@@ -79,7 +79,7 @@ fn script_ext() -> &'static str {
     "bat"
 }
 
-pub fn list_scripts(ctx: &mut AppContext) -> anyhow::Result<()> {
+pub fn list_scripts(ctx: &AppContext) -> anyhow::Result<()> {
     let scripts = ctx.db.scripts_for_tree(ctx.root_id)?;
     if scripts.is_empty() {
         eprintln!("No scripts have been added yet. To add one, use otkeep add.");
@@ -97,7 +97,7 @@ pub fn list_scripts(ctx: &mut AppContext) -> anyhow::Result<()> {
     Ok(())
 }
 
-pub fn list_files(ctx: &mut AppContext) -> anyhow::Result<()> {
+pub fn list_files(ctx: &AppContext) -> anyhow::Result<()> {
     let files = ctx.db.files_for_tree(ctx.root_id)?;
     if files.is_empty() {
         eprintln!("No files have been saved yet. To add one, use otkeep save.");
