@@ -249,12 +249,15 @@ impl Database {
         let blob_id = match query_blob_by_body(&tx, &bytes)? {
             Some(id) => id,
             None => {
-                tx.execute("INSERT INTO blobs (body) VALUES (?)", params![bytes])?;
+                tx.execute(
+                    "INSERT OR REPLACE INTO blobs (body) VALUES (?)",
+                    params![bytes],
+                )?;
                 tx.last_insert_rowid()
             }
         };
         tx.execute(
-            "INSERT INTO tree_files (tree_id, name, blob_id) VALUES (?1, ?2, ?3)",
+            "INSERT OR REPLACE INTO tree_files (tree_id, name, blob_id) VALUES (?1, ?2, ?3)",
             params![tree_id, path, blob_id],
         )?;
         tx.commit()?;
