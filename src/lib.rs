@@ -82,9 +82,9 @@ fn script_ext() -> &'static str {
 pub fn list_scripts(ctx: &AppContext) -> anyhow::Result<()> {
     let scripts = ctx.db.scripts_for_tree(ctx.root_id)?;
     if scripts.is_empty() {
-        eprintln!("No scripts have been added yet. To add one, use otkeep add.");
+        eprintln!("No scripts have been added yet. To add one, use okeep add.");
     } else {
-        eprintln!("The following scripts are available (otrun):\n");
+        eprintln!("The following scripts are available (orun):\n");
         for ScriptInfo { name, description } in scripts {
             eprintln!(
                 "{}{}{}",
@@ -100,9 +100,9 @@ pub fn list_scripts(ctx: &AppContext) -> anyhow::Result<()> {
 pub fn list_files(ctx: &AppContext) -> anyhow::Result<()> {
     let files = ctx.db.files_for_tree(ctx.root_id)?;
     if files.is_empty() {
-        eprintln!("No files have been saved yet. To add one, use otkeep save.");
+        eprintln!("No files have been saved yet. To add one, use okeep save.");
     } else {
-        eprintln!("The following files are available (otkeep restore):\n");
+        eprintln!("The following files are available (okeep restore):\n");
         for ScriptInfo { name, description } in files {
             eprintln!(
                 "{}{}{}",

@@ -20,7 +20,7 @@ fn try_main() -> anyhow::Result<i32> {
         Some((id, _)) => id,
         None => {
             otkeep::print_established_trees(&db)?;
-            bail!("No OtKeep tree root was found. To establish one, use otkeep establish");
+            bail!("No OtKeep tree root was found. To establish one, use okeep establish");
         }
     };
 

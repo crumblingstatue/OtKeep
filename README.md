@@ -44,16 +44,16 @@ Needless to say, if you don't have to deal with out of tree scripts, then OtKeep
 
 ## Usage
 
-OTKeep provides 2 tools, `otkeep` for managing your scripts, and `otrun` for running them.
+OTKeep provides 2 tools, `okeep` for managing your scripts, and `orun` for running them.
 
 ### Adding scripts
-To add a script, use `otkeep add`.
-For example, to add your windows cross-build script called `build_win.sh`, do `otkeep add build-win build_win.sh`.
+To add a script, use `okeep add`.
+For example, to add your windows cross-build script called `build_win.sh`, do `okeep add build-win build_win.sh`.
 
 ### Running scripts
-To run a script you added, be in the tree you added it to, and simply run `otrun` with the script name as argument.
-For the aformentioned `build-win` example, you would run `otrun build-win`.
-`otrun` forwards all arguments to the script.
+To run a script you added, be in the tree you added it to, and simply run `orun` with the script name as argument.
+For the aformentioned `build-win` example, you would run `orun build-win`.
+`orun` forwards all arguments to the script.
 
 ### Listing scripts for the current tree
-Simply run `otrun` without any arguments. It will list the scripts available for the current tree.
+Simply run `orun` without any arguments. It will list the scripts available for the current tree.

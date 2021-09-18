@@ -142,7 +142,7 @@ fn main() -> anyhow::Result<()> {
         Some(root) => root,
         None => {
             otkeep::print_established_trees(&db)?;
-            bail!("No OtKeep tree root was found. To establish one, use otkeep establish");
+            bail!("No OtKeep tree root was found. To establish one, use okeep establish");
         }
     };
 
@@ -175,7 +175,7 @@ fn main() -> anyhow::Result<()> {
 }
 
 fn help_msg() {
-    eprintln!("\nType otkeep --help for help.");
+    eprintln!("\nType okeep --help for help.");
 }
 
 mod cmd {
@@ -246,7 +246,7 @@ mod cmd {
         }
         if !any {
             eprintln!("Looks like no trees have been added yet.");
-            eprintln!("Find a tree you'd like to add and type `otkeep establish`.");
+            eprintln!("Find a tree you'd like to add and type `okeep establish`.");
         }
         Ok(())
     }
