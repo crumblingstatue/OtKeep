@@ -149,7 +149,7 @@ impl Database {
             let description: Option<String> = description;
             vec.push(ScriptInfo {
                 name,
-                description: description.unwrap_or_else(String::new),
+                description: description.unwrap_or_default(),
             });
         }
         Ok(vec)
@@ -166,7 +166,7 @@ impl Database {
             let description: Option<String> = description;
             vec.push(ScriptInfo {
                 name,
-                description: description.unwrap_or_else(String::new),
+                description: description.unwrap_or_default(),
             });
         }
         Ok(vec)

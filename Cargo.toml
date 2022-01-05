@@ -6,13 +6,13 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-anyhow = "1.0.43"
-clap = "2.33.3"
-directories = "3.0.2"
+anyhow = "1.0.52"
+clap = { version = "3.0.4", features = ["derive"] }
+directories = "4.0.1"
 temp-dir = "0.1.11"
-thiserror = "1.0.26"
+thiserror = "1.0.30"
 paths-as-strings = "0.1.1"
 
 [dependencies.rusqlite]
-version = "0.25.3"
+version = "0.26.3"
 features = ["bundled"]
