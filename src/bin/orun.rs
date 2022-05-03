@@ -29,7 +29,7 @@ fn try_main() -> anyhow::Result<i32> {
         Some(arg) => arg,
         None => {
             otkeep::list_scripts(&app)?;
-            eprintln!("\nFor more options, try otkeep",);
+            eprintln!("\nFor more options, try okeep",);
             return Ok(1);
         }
     };
@@ -52,7 +52,7 @@ fn run(
             Some(_) => {
                 eprintln!("No script named '{}' for the current tree.\n", name);
                 otkeep::list_scripts(ctx)?;
-                eprintln!("\nFor more options, try otkeep");
+                eprintln!("\nFor more options, try okeep");
                 Ok(1)
             }
             None => Err(e),
