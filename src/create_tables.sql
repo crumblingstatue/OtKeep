@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS tree_scripts (
     blob_id INTEGER NOT NULL,
     name    TEXT NOT NULL,
     desc    TEXT,
+    -- The same tree cannot have multiple items with the same name
     UNIQUE(tree_id, name)
 );
 CREATE TABLE IF NOT EXISTS tree_files (
@@ -16,5 +17,6 @@ CREATE TABLE IF NOT EXISTS tree_files (
     blob_id INTEGER NOT NULL,
     name    TEXT NOT NULL,
     desc    TEXT,
+    -- The same tree cannot have multiple items with the same name
     UNIQUE(tree_id, name)
 );
