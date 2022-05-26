@@ -1,5 +1,7 @@
 #![feature(let_else)]
 
+use std::path::PathBuf;
+
 use anyhow::{bail, Context};
 use clap::{Parser, Subcommand};
 use otkeep::AppContext;
@@ -78,6 +80,11 @@ enum Sub {
     Restore {
         /// Path to the file
         path: Option<String>,
+    },
+    /// Clone all scripts from another tree
+    Clone {
+        /// Name of the tree to clone from
+        tree: PathBuf,
     },
 }
 
@@ -164,6 +171,7 @@ fn main() -> anyhow::Result<()> {
         Sub::Restore { path } => {
             cmd::restore(&mut app, path.as_deref()).context("File restore failed")?
         }
+        Sub::Clone { tree } => cmd::clone(&mut app, &tree)?,
     }
     Ok(())
 }
@@ -173,7 +181,9 @@ fn help_msg() {
 }
 
 mod cmd {
-    use anyhow::bail;
+    use std::path::Path;
+
+    use anyhow::{bail, Context};
 
     use otkeep::{database::Database, AppContext};
 
@@ -289,6 +299,13 @@ mod cmd {
         };
         let bytes = otkeep::get_file(app, path)?;
         std::fs::write(path, bytes)?;
+        Ok(())
+    }
+
+    pub(crate) fn clone(app: &mut AppContext, tree: &Path) -> anyhow::Result<()> {
+        let dst = app.root_id;
+        let src = app.db.query_tree(tree)?.context("Missing tree")?;
+        app.db.clone_tree(src, dst)?;
         Ok(())
     }
 }

@@ -6,7 +6,7 @@ use std::{
 use thiserror::Error;
 
 use anyhow::bail;
-use rusqlite::{params, Connection, OptionalExtension};
+use rusqlite::{named_params, params, Connection, OptionalExtension};
 
 use crate::fs_util::ensure_dir_exists;
 
@@ -238,6 +238,17 @@ impl Database {
             params![tree_id, path, blob_id],
         )?;
         tx.commit()?;
+        Ok(())
+    }
+
+    pub fn clone_tree(&mut self, src_tree: i64, dst_tree: i64) -> anyhow::Result<()> {
+        self.conn.execute(
+            include_str!("clone_tree_table.sql"),
+            named_params! {
+                ":src": src_tree,
+                ":dst": dst_tree,
+            },
+        )?;
         Ok(())
     }
 }
