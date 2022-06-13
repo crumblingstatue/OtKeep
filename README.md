@@ -42,6 +42,9 @@ This is exactly what OtKeep is for.
 
 Needless to say, if you don't have to deal with out of tree scripts, then OtKeep is not for you.
 
+## Installing
+`cargo install otkeep`
+
 ## Usage
 
 OTKeep provides 2 tools, `okeep` for managing your scripts, and `orun` for running them.
