@@ -1,5 +1,3 @@
-#![feature(let_else)]
-
 use std::path::PathBuf;
 
 use anyhow::{bail, Context};
