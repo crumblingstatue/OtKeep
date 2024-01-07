@@ -196,7 +196,7 @@ mod cmd {
             script.as_bytes().to_vec()
         } else {
             let absolute_path = std::fs::canonicalize(curr_dir.join(script))?;
-            std::fs::read(&absolute_path)?
+            std::fs::read(absolute_path)?
         };
         ctx.db.add_script(ctx.root_id, name, script_body)?;
         Ok(())
@@ -270,7 +270,7 @@ mod cmd {
             script.as_bytes().to_vec()
         } else {
             let absolute_path = std::fs::canonicalize(curr_dir.join(script))?;
-            std::fs::read(&absolute_path)?
+            std::fs::read(absolute_path)?
         };
         ctx.db.update_script(ctx.root_id, name, script_body)?;
         Ok(())
