@@ -1,7 +1,8 @@
-use std::ffi::OsStr;
-
-use anyhow::{bail, Context};
-use otkeep::{database::NoSuchScriptForCurrentTree, AppContext};
+use {
+    anyhow::{bail, Context},
+    otkeep::{database::NoSuchScriptForCurrentTree, AppContext},
+    std::ffi::OsStr,
+};
 
 fn main() {
     match try_main() {

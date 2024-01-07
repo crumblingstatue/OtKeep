@@ -1,8 +1,9 @@
-use std::path::PathBuf;
-
-use anyhow::{bail, Context};
-use clap::{Parser, Subcommand};
-use otkeep::AppContext;
+use {
+    anyhow::{bail, Context},
+    clap::{Parser, Subcommand},
+    otkeep::AppContext,
+    std::path::PathBuf,
+};
 
 #[derive(Parser)]
 #[clap(about, version)]
@@ -179,11 +180,11 @@ fn help_msg() {
 }
 
 mod cmd {
-    use std::path::Path;
-
-    use anyhow::{bail, Context};
-
-    use otkeep::{database::Database, AppContext};
+    use {
+        anyhow::{bail, Context},
+        otkeep::{database::Database, AppContext},
+        std::path::Path,
+    };
 
     pub(crate) fn add(
         ctx: &mut AppContext,

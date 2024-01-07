@@ -1,13 +1,13 @@
-use std::{
-    io::Write,
-    path::{Path, PathBuf},
+use {
+    crate::database::ScriptInfo,
+    anyhow::Context,
+    database::Database,
+    directories::ProjectDirs,
+    std::{
+        io::Write,
+        path::{Path, PathBuf},
+    },
 };
-
-use anyhow::Context;
-use database::Database;
-use directories::ProjectDirs;
-
-use crate::database::ScriptInfo;
 
 pub mod database;
 mod fs_util;

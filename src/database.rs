@@ -1,14 +1,14 @@
-use std::{
-    ffi::OsStr,
-    path::{Path, PathBuf},
-    process::ExitStatus,
+use {
+    crate::fs_util::ensure_dir_exists,
+    anyhow::bail,
+    rusqlite::{named_params, params, Connection, OptionalExtension},
+    std::{
+        ffi::OsStr,
+        path::{Path, PathBuf},
+        process::ExitStatus,
+    },
+    thiserror::Error,
 };
-use thiserror::Error;
-
-use anyhow::bail;
-use rusqlite::{named_params, params, Connection, OptionalExtension};
-
-use crate::fs_util::ensure_dir_exists;
 
 /// Contains all the blobs
 pub struct Database {

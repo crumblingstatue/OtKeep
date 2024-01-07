@@ -1,9 +1,10 @@
-use std::{
-    ffi::OsStr,
-    process::{Command, ExitStatus},
+use {
+    crate::script_ext,
+    std::{
+        ffi::OsStr,
+        process::{Command, ExitStatus},
+    },
 };
-
-use crate::script_ext;
 
 pub(crate) fn run_script(
     script: &[u8],
