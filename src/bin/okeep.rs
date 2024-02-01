@@ -97,6 +97,11 @@ enum Sub {
         /// Path to the tree
         tree: PathBuf,
     },
+    /// Edit a script. Uses editor from $EDITOR env var.
+    Edit {
+        /// Name of the script
+        name: String,
+    },
 }
 
 fn main() -> anyhow::Result<()> {
@@ -200,6 +205,19 @@ fn main() -> anyhow::Result<()> {
                 eprintln!("No root found at the given location ({})", tree.display());
             }
         },
+        Sub::Edit { name } => {
+            let Some(editor) = std::env::var_os("EDITOR") else {
+                eprintln!("$EDITOR env var needs to be set to edit");
+                return Ok(());
+            };
+            let blob = app.db.get_script_by_name(root_id, &name)?;
+            let dir = temp_dir::TempDir::new()?;
+            let filepath = dir.path().join("okeep-script.txt");
+            std::fs::write(&filepath, blob)?;
+            std::process::Command::new(editor).arg(&filepath).status()?;
+            let blob = std::fs::read(&filepath)?;
+            app.db.update_script(root_id, &name, blob)?;
+        }
     }
     Ok(())
 }
