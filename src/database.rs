@@ -39,13 +39,8 @@ impl Database {
 
     pub fn add_script(&mut self, tree_id: i64, name: &str, body: Vec<u8>) -> anyhow::Result<()> {
         let tx = self.conn.transaction()?;
-        let blob_id = match query_blob_by_body(&tx, &body)? {
-            Some(id) => id,
-            None => {
-                tx.execute("INSERT INTO blobs (body) VALUES (?)", params![body])?;
-                tx.last_insert_rowid()
-            }
-        };
+        tx.execute("INSERT INTO blobs (body) VALUES (?)", params![body])?;
+        let blob_id = tx.last_insert_rowid();
         tx.execute(
             "INSERT INTO tree_scripts (tree_id, name, blob_id) VALUES (?1, ?2, ?3)",
             params![tree_id, name, blob_id],
@@ -232,16 +227,11 @@ impl Database {
 
     pub fn add_file(&mut self, tree_id: i64, path: &str, bytes: Vec<u8>) -> anyhow::Result<()> {
         let tx = self.conn.transaction()?;
-        let blob_id = match query_blob_by_body(&tx, &bytes)? {
-            Some(id) => id,
-            None => {
-                tx.execute(
-                    "INSERT OR REPLACE INTO blobs (body) VALUES (?)",
-                    params![bytes],
-                )?;
-                tx.last_insert_rowid()
-            }
-        };
+        tx.execute(
+            "INSERT OR REPLACE INTO blobs (body) VALUES (?)",
+            params![bytes],
+        )?;
+        let blob_id = tx.last_insert_rowid();
         tx.execute(
             "INSERT OR REPLACE INTO tree_files (tree_id, name, blob_id) VALUES (?1, ?2, ?3)",
             params![tree_id, path, blob_id],
@@ -260,11 +250,6 @@ impl Database {
         )?;
         Ok(())
     }
-}
-
-fn query_blob_by_body(conn: &Connection, body: &[u8]) -> anyhow::Result<Option<i64>> {
-    let mut stmt = conn.prepare("SELECT _rowid_ FROM blobs WHERE body=?")?;
-    Ok(stmt.query_row(params![body], |row| row.get(0)).optional()?)
 }
 
 #[derive(Error, Debug)]
