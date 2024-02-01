@@ -102,6 +102,8 @@ enum Sub {
         /// Name of the script
         name: String,
     },
+    /// Interactively remove old trees that don't exist on the filesystem
+    Prune,
 }
 
 fn main() -> anyhow::Result<()> {
@@ -218,6 +220,30 @@ fn main() -> anyhow::Result<()> {
             let blob = std::fs::read(&filepath)?;
             app.db.update_script(root_id, &name, blob)?;
         }
+        Sub::Prune => {
+            for root in app.db.get_tree_roots()? {
+                if !root.path.exists() {
+                    eprintln!("`{}` has the following scripts: ", root.path.display());
+                    for script in app.db.scripts_for_tree(root.id)? {
+                        eprintln!("{}", script.name);
+                    }
+                    let files = app.db.files_for_tree(root.id)?;
+                    if !files.is_empty() {
+                        eprintln!("... and following files: ");
+                        for file in files {
+                            eprintln!("{}", file.name);
+                        }
+                    }
+                    eprintln!("Remove? (y/n)");
+                    let mut ans_line = String::new();
+                    std::io::stdin().read_line(&mut ans_line)?;
+                    let ans = ans_line.trim();
+                    if ans == "y" {
+                        app.db.remove_tree(root.id)?;
+                    }
+                }
+            }
+        }
     }
     Ok(())
 }
@@ -287,12 +313,12 @@ mod cmd {
 
     pub fn list_trees(db: &Database) -> anyhow::Result<()> {
         let mut any = false;
-        for root_path in db.get_tree_roots()? {
+        for root in db.get_tree_roots()? {
             let mut style = Style::new();
-            if !root_path.exists() {
+            if !root.path.exists() {
                 style = style.bright_black();
             }
-            eprintln!("{}", root_path.display().style(style));
+            eprintln!("{}", root.path.display().style(style));
             any = true;
         }
         if !any {

@@ -52,8 +52,8 @@ pub fn print_established_trees(db: &Database) -> anyhow::Result<()> {
     let roots = db.get_tree_roots()?;
     if !roots.is_empty() {
         eprintln!("The following trees are established:");
-        for path in roots {
-            eprintln!("{}", path.display());
+        for root in roots {
+            eprintln!("{}", root.path.display());
         }
     }
     eprintln!();

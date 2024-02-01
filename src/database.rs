@@ -22,6 +22,11 @@ pub struct ScriptInfo {
     pub description: String,
 }
 
+pub struct TreeRootInfo {
+    pub id: i64,
+    pub path: PathBuf,
+}
+
 impl Database {
     pub fn load(dir: &Path) -> anyhow::Result<Self> {
         ensure_dir_exists(dir)?;
@@ -188,13 +193,17 @@ impl Database {
         Ok(())
     }
 
-    pub fn get_tree_roots(&self) -> anyhow::Result<Vec<PathBuf>> {
-        let mut stmt = self.conn.prepare("SELECT root FROM trees")?;
+    pub fn get_tree_roots(&self) -> anyhow::Result<Vec<TreeRootInfo>> {
+        let mut stmt = self.conn.prepare("SELECT _rowid_, root FROM trees")?;
         let mut vec = Vec::new();
-        for root in stmt.query_map([], |row| row.get(0))? {
-            let root: String = root?;
+        for result in stmt.query_map([], |row| {
+            let id = row.get(0)?;
+            let root_path: String = row.get(1)?;
+            Ok((id, root_path))
+        })? {
+            let (id, root) = result?;
             let pb = paths_as_strings::decode_path(&root)?;
-            vec.push(pb);
+            vec.push(TreeRootInfo { id, path: pb });
         }
         Ok(vec)
     }
