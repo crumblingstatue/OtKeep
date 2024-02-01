@@ -29,7 +29,14 @@ pub fn load_db() -> anyhow::Result<Database> {
 
 pub fn find_root(database: &Database) -> anyhow::Result<Option<(i64, PathBuf)>> {
     let current_dir = std::env::current_dir()?;
-    let mut opt_path: Option<&Path> = Some(&current_dir);
+    find_root_for_path(database, &current_dir)
+}
+
+pub fn find_root_for_path(
+    database: &Database,
+    path: &Path,
+) -> anyhow::Result<Option<(i64, PathBuf)>> {
+    let mut opt_path: Option<&Path> = Some(path);
     while let Some(path) = opt_path {
         match database.query_tree(path)? {
             Some(id) => return Ok(Some((id, path.to_owned()))),
@@ -80,7 +87,11 @@ fn script_ext() -> &'static str {
 }
 
 pub fn list_scripts(ctx: &AppContext) -> anyhow::Result<()> {
-    let scripts = ctx.db.scripts_for_tree(ctx.root_id)?;
+    list_scripts_for_tree(ctx, ctx.root_id)
+}
+
+pub fn list_scripts_for_tree(ctx: &AppContext, id: i64) -> anyhow::Result<()> {
+    let scripts = ctx.db.scripts_for_tree(id)?;
     if scripts.is_empty() {
         eprintln!("No scripts have been added yet. To add one, use okeep add.");
     } else {

@@ -82,7 +82,12 @@ enum Sub {
     },
     /// Clone all scripts from another tree
     Clone {
-        /// Name of the tree to clone from
+        /// Path to the tree
+        tree: PathBuf,
+    },
+    /// List scripts from a tree
+    ListScripts {
+        /// Path to the tree
         tree: PathBuf,
     },
 }
@@ -171,6 +176,14 @@ fn main() -> anyhow::Result<()> {
             cmd::restore(&mut app, path.as_deref()).context("File restore failed")?
         }
         Sub::Clone { tree } => cmd::clone(&mut app, &tree)?,
+        Sub::ListScripts { tree } => {
+            match otkeep::find_root_for_path(&app.db, &tree)? {
+                Some((root_id, _)) => otkeep::list_scripts_for_tree(&app, root_id)?,
+                None => {
+                    eprintln!("No root found at the given location ({})", tree.display());
+                }
+            };
+        }
     }
     Ok(())
 }
