@@ -80,6 +80,13 @@ enum Sub {
         /// Path to the file
         path: Option<String>,
     },
+    /// Clone a single script from a path
+    Cp {
+        /// Path to the tree
+        tree: PathBuf,
+        /// Name of the script
+        name: String,
+    },
     /// Clone all scripts from another tree
     Clone {
         /// Path to the tree
@@ -184,6 +191,15 @@ fn main() -> anyhow::Result<()> {
                 }
             };
         }
+        Sub::Cp { tree, name } => match otkeep::find_root_for_path(&app.db, &tree)? {
+            Some((other_tree_id, _)) => {
+                let blob = app.db.get_script_by_name(other_tree_id, &name)?;
+                app.db.add_script(root_id, &name, blob)?;
+            }
+            None => {
+                eprintln!("No root found at the given location ({})", tree.display());
+            }
+        },
     }
     Ok(())
 }
