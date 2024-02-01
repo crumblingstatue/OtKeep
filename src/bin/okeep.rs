@@ -183,6 +183,7 @@ mod cmd {
     use {
         anyhow::{bail, Context},
         otkeep::{database::Database, AppContext},
+        owo_colors::{OwoColorize, Style},
         std::path::Path,
     };
 
@@ -240,7 +241,11 @@ mod cmd {
     pub fn list_trees(db: &Database) -> anyhow::Result<()> {
         let mut any = false;
         for root_path in db.get_tree_roots()? {
-            eprintln!("{}", root_path.display());
+            let mut style = Style::new();
+            if !root_path.exists() {
+                style = style.bright_black();
+            }
+            eprintln!("{}", root_path.display().style(style));
             any = true;
         }
         if !any {

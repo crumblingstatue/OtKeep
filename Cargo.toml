@@ -16,6 +16,7 @@ directories = "5.0.1"
 temp-dir = "0.1.12"
 thiserror = "1.0.56"
 paths-as-strings = "0.1.1"
+owo-colors = "4.0.0"
 
 [dependencies.rusqlite]
 version = "0.30.0"
