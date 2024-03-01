@@ -221,8 +221,10 @@ fn main() -> anyhow::Result<()> {
             app.db.update_script(root_id, &name, blob)?;
         }
         Sub::Prune => {
+            let mut any_was_stray = false;
             for root in app.db.get_tree_roots()? {
                 if !root.path.exists() {
+                    any_was_stray = true;
                     eprintln!("`{}` has the following scripts: ", root.path.display());
                     for script in app.db.scripts_for_tree(root.id)? {
                         eprintln!("{}", script.name);
@@ -242,6 +244,9 @@ fn main() -> anyhow::Result<()> {
                         app.db.remove_tree(root.id)?;
                     }
                 }
+            }
+            if !any_was_stray {
+                eprintln!("No stray roots were detected.");
             }
         }
     }
