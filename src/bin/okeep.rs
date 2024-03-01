@@ -33,6 +33,7 @@ enum Sub {
         desc: Option<String>,
     },
     /// Remove a script
+    #[clap(alias = "rm")]
     Remove {
         /// Name of the script
         name: String,
