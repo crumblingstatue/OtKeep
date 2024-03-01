@@ -3,6 +3,7 @@ use {
     anyhow::bail,
     rusqlite::{named_params, params, Connection, OptionalExtension},
     std::{
+        collections::HashSet,
         ffi::OsStr,
         path::{Path, PathBuf},
         process::ExitStatus,
@@ -87,7 +88,18 @@ impl Database {
         }
     }
 
-    fn fetch_blob(&self, id: i64) -> Result<Vec<u8>, anyhow::Error> {
+    pub fn blob_is_null(&self, id: i64) -> anyhow::Result<bool> {
+        self.conn.query_row_and_then(
+            "SELECT body FROM blobs WHERE _rowid_=?",
+            params![id],
+            |row| {
+                let blob: Option<Vec<u8>> = row.get(0)?;
+                Ok(blob.is_none())
+            },
+        )
+    }
+
+    pub fn fetch_blob(&self, id: i64) -> Result<Vec<u8>, anyhow::Error> {
         let mut stmt = self
             .conn
             .prepare("SELECT body FROM blobs WHERE _rowid_=?")?;
@@ -247,6 +259,36 @@ impl Database {
                 ":src": src_tree,
                 ":dst": dst_tree,
             },
+        )?;
+        Ok(())
+    }
+    /// Returns a set of blob ids that are referenced by trees
+    ///
+    /// Can be used to check whether a blob is part of any tree
+    pub fn tree_script_blob_ids(&self) -> anyhow::Result<HashSet<i64>> {
+        let mut stmt = self.conn.prepare("SELECT blob_id FROM tree_scripts")?;
+        let mut set = HashSet::new();
+        let rows = stmt.query_map(params![], |row| {
+            let id: i64 = row.get(0)?;
+            Ok(id)
+        })?;
+        for result in rows {
+            let id = result?;
+            set.insert(id);
+        }
+        Ok(set)
+    }
+    pub fn blobs_table_len(&self) -> anyhow::Result<i64> {
+        let result = self
+            .conn
+            .query_row("SELECT COUNT() FROM blobs", params![], |row| row.get(0))?;
+        Ok(result)
+    }
+
+    pub fn nullify_blob(&self, rowid: i64) -> anyhow::Result<()> {
+        self.conn.execute(
+            "UPDATE blobs SET body = NULL where _rowid_=?",
+            params![rowid],
         )?;
         Ok(())
     }

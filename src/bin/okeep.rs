@@ -103,8 +103,17 @@ enum Sub {
         /// Name of the script
         name: String,
     },
+    /// Interactively remove unused things
+    #[clap(subcommand)]
+    Prune(PruneSubCmd),
+}
+
+#[derive(Subcommand)]
+enum PruneSubCmd {
     /// Interactively remove old trees that don't exist on the filesystem
-    Prune,
+    Trees,
+    /// Interactively remove old blobs that aren't referenced by any trees
+    Blobs,
 }
 
 fn main() -> anyhow::Result<()> {
@@ -221,7 +230,7 @@ fn main() -> anyhow::Result<()> {
             let blob = std::fs::read(&filepath)?;
             app.db.update_script(root_id, &name, blob)?;
         }
-        Sub::Prune => {
+        Sub::Prune(PruneSubCmd::Trees) => {
             let mut any_was_stray = false;
             for root in app.db.get_tree_roots()? {
                 if !root.path.exists() {
@@ -248,6 +257,33 @@ fn main() -> anyhow::Result<()> {
             }
             if !any_was_stray {
                 eprintln!("No stray roots were detected.");
+            }
+        }
+        Sub::Prune(PruneSubCmd::Blobs) => {
+            let mut any_was_stray_and_nonnull = false;
+            let tree_blob_refs = app.db.tree_script_blob_ids()?;
+            let len = app.db.blobs_table_len()?;
+            for rowid in 1..=len {
+                if !tree_blob_refs.contains(&rowid) {
+                    if app.db.blob_is_null(rowid)? {
+                        continue;
+                    }
+                    any_was_stray_and_nonnull = true;
+                    let data = app.db.fetch_blob(rowid)?;
+                    let s = String::from_utf8_lossy(&data);
+                    eprintln!("Unreferenced blob:");
+                    eprintln!("{s}");
+                    eprintln!("Remove? (y/n)");
+                    let mut ans_line = String::new();
+                    std::io::stdin().read_line(&mut ans_line)?;
+                    let ans = ans_line.trim();
+                    if ans == "y" {
+                        app.db.nullify_blob(rowid)?;
+                    }
+                }
+            }
+            if !any_was_stray_and_nonnull {
+                eprintln!("No stray blobs were detected.");
             }
         }
     }
