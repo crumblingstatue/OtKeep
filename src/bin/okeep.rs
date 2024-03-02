@@ -20,7 +20,9 @@ enum Sub {
         /// The name the script will be referred to as
         name: String,
         /// A path to a script or an inline script
-        script: String,
+        ///
+        /// If not provided, $EDITOR will open to edit a new script
+        script: Option<String>,
         /// Add an inline script instead of loading from a file
         #[clap(short = 'i', long = "inline")]
         inline: bool,
@@ -168,7 +170,9 @@ fn main() -> anyhow::Result<()> {
             name,
             script,
             inline,
-        } => cmd::add(&mut app, &name, &script, inline).context("Failed to add script")?,
+        } => {
+            cmd::add(&mut app, &name, script.as_deref(), inline).context("Failed to add script")?
+        }
         Sub::Mod { name, desc } => {
             cmd::mod_(&mut app, &name, desc.as_deref()).context("Mod failed")?
         }
@@ -305,9 +309,27 @@ mod cmd {
     pub(crate) fn add(
         ctx: &mut AppContext,
         name: &str,
-        script: &str,
-        inline: bool,
+        script: Option<&str>,
+        mut inline: bool,
     ) -> anyhow::Result<()> {
+        let script_buf;
+        let script = match script {
+            Some(s) => s,
+            None => {
+                inline = true;
+                let Some(editor) = std::env::var_os("EDITOR") else {
+                    bail!("No $EDITOR set. Can't edit script");
+                };
+                let dir = temp_dir::TempDir::new()?;
+                let filepath = dir.child("script.txt");
+                std::process::Command::new(editor)
+                    .arg(&filepath)
+                    .status()
+                    .context("Launching editor")?;
+                script_buf = std::fs::read_to_string(filepath).context("Reading script file")?;
+                &script_buf
+            }
+        };
         let curr_dir = std::env::current_dir()?;
         let script_body = if inline {
             script.as_bytes().to_vec()
