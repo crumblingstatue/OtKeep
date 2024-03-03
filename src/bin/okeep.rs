@@ -44,6 +44,8 @@ enum Sub {
     Establish,
     /// Unestablish the current directory as a root
     Unestablish,
+    /// Reestablish (move) another root to the current directory
+    Reestablish { old_root: PathBuf },
     /// List all the trees kept in the database
     ListTrees,
     /// Check out a copy of a script as a file
@@ -153,6 +155,15 @@ fn main() -> anyhow::Result<()> {
             eprintln!("Established {}", std::env::current_dir()?.display());
             return Ok(());
         }
+        Sub::Reestablish { ref old_root } => {
+            cmd::reestablish(&db, old_root).context("Failed to reestablish OtKeep root")?;
+            eprintln!(
+                "Reestablished {} as {}",
+                old_root.display(),
+                std::env::current_dir()?.display()
+            );
+            return Ok(());
+        }
         _ => {}
     }
 
@@ -177,7 +188,7 @@ fn main() -> anyhow::Result<()> {
             cmd::mod_(&mut app, &name, desc.as_deref()).context("Mod failed")?
         }
         Sub::Remove { name } => cmd::remove(&mut app, &name).context("Failed to remove script")?,
-        Sub::Establish => unreachable!(),
+        Sub::Establish | Sub::Reestablish { .. } => unreachable!(),
         Sub::Unestablish => {
             if std::env::current_dir()? != root_path {
                 eprintln!("The current directory is not the root.");
@@ -350,6 +361,16 @@ mod cmd {
     }
     pub fn unestablish(ctx: &mut AppContext) -> anyhow::Result<()> {
         ctx.db.remove_tree(ctx.root_id)
+    }
+    pub fn reestablish(db: &Database, old_root: &Path) -> anyhow::Result<()> {
+        let current_dir = std::env::current_dir()?;
+        match db.query_tree(&current_dir)? {
+            None => {
+                db.rename_tree(old_root, &current_dir)?;
+            }
+            Some(_) => bail!("There is already a OtKeep tree root here."),
+        }
+        Ok(())
     }
     pub fn mod_(ctx: &mut AppContext, name: &str, desc: Option<&str>) -> anyhow::Result<()> {
         let mut modded = false;

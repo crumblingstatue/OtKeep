@@ -179,6 +179,16 @@ impl Database {
         Ok(())
     }
 
+    pub fn rename_tree(&self, old_path: &Path, new_path: &Path) -> anyhow::Result<()> {
+        let old_path = paths_as_strings::encode_path(&old_path);
+        let new_path = paths_as_strings::encode_path(&new_path);
+        self.conn.execute(
+            "UPDATE trees SET root=?2 WHERE root=?1",
+            params![old_path, new_path],
+        )?;
+        Ok(())
+    }
+
     pub fn remove_tree(&mut self, tree_id: i64) -> anyhow::Result<()> {
         let tx = self.conn.transaction()?;
         tx.execute("DELETE FROM trees WHERE _rowid_=?", params![tree_id])?;
