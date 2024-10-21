@@ -62,7 +62,7 @@ pub fn print_established_trees(db: &Database) -> anyhow::Result<()> {
 
 pub fn checkout(name: &str, ctx: &mut AppContext) -> anyhow::Result<()> {
     let script = ctx.db.get_script_by_name(ctx.root_id, name)?;
-    std::fs::write(format!("{}.{}", name, script_ext()), script)?;
+    std::fs::write(name, script)?;
     Ok(())
 }
 
@@ -74,10 +74,6 @@ pub fn cat(name: &str, ctx: &mut AppContext) -> anyhow::Result<()> {
 
 pub fn rename_script(old_name: &str, new_name: &str, ctx: &mut AppContext) -> anyhow::Result<()> {
     ctx.db.rename_script(old_name, new_name)
-}
-
-fn script_ext() -> &'static str {
-    "sh"
 }
 
 pub fn list_scripts(ctx: &AppContext) -> anyhow::Result<()> {

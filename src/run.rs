@@ -1,24 +1,25 @@
-use {
-    crate::script_ext,
-    std::{
-        ffi::OsStr,
-        process::{Command, ExitStatus},
-    },
+use std::{
+    ffi::OsStr,
+    fs::OpenOptions,
+    io::Write,
+    os::unix::fs::OpenOptionsExt,
+    process::{Command, ExitStatus},
 };
+
+const MODE_EXEC: u32 = 0o755;
 
 pub(crate) fn run_script(
     script: &[u8],
     args: impl Iterator<Item = impl AsRef<OsStr>>,
 ) -> anyhow::Result<ExitStatus> {
     let temp_dir = temp_dir::TempDir::new()?;
-    let path = temp_dir.child(format!("script.{}", script_ext()));
-    std::fs::write(&path, script)?;
-    Ok(script_command(|cmd| cmd.arg(path).args(args).status())?)
-}
-
-type CmdResult = std::io::Result<ExitStatus>;
-
-fn script_command<F: FnOnce(&mut Command) -> CmdResult>(f: F) -> CmdResult {
-    let mut cmd = Command::new("sh");
-    f(&mut cmd)
+    let path = temp_dir.child("script");
+    let mut f = OpenOptions::new()
+        .create(true)
+        .write(true)
+        .mode(MODE_EXEC)
+        .open(&path)?;
+    f.write_all(script)?;
+    let exit_status = Command::new(path).args(args).status()?;
+    Ok(exit_status)
 }
