@@ -18,15 +18,7 @@ pub(crate) fn run_script(
 
 type CmdResult = std::io::Result<ExitStatus>;
 
-#[cfg(not(target_os = "windows"))]
 fn script_command<F: FnOnce(&mut Command) -> CmdResult>(f: F) -> CmdResult {
     let mut cmd = Command::new("sh");
-    f(&mut cmd)
-}
-
-#[cfg(target_os = "windows")]
-fn script_command<F: FnOnce(&mut Command) -> CmdResult>(f: F) -> CmdResult {
-    let mut cmd = Command::new("cmd");
-    cmd.arg("/c");
     f(&mut cmd)
 }

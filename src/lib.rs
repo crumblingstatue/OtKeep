@@ -76,14 +76,8 @@ pub fn rename_script(old_name: &str, new_name: &str, ctx: &mut AppContext) -> an
     ctx.db.rename_script(old_name, new_name)
 }
 
-#[cfg(not(target_os = "windows"))]
 fn script_ext() -> &'static str {
     "sh"
-}
-
-#[cfg(target_os = "windows")]
-fn script_ext() -> &'static str {
-    "bat"
 }
 
 pub fn list_scripts(ctx: &AppContext) -> anyhow::Result<()> {

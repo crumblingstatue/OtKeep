@@ -42,6 +42,11 @@ This is exactly what OtKeep is for.
 
 Needless to say, if you don't have to deal with out of tree scripts, then OtKeep is not for you.
 
+## Supported platforms
+
+Linux, and other unix-like platforms where you can make files executable.
+Windows is not supported at present.
+
 ## Installing
 `cargo install otkeep`
 
