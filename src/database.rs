@@ -81,11 +81,22 @@ impl Database {
         match self.query_script_id_from_name(tree_id, name)? {
             Some(id) => {
                 let script = self.fetch_blob(id)?;
-                let status = crate::run::run_script(&script, args)?;
+                let status = crate::run::run_script(&script, args, self.query_tree_root(tree_id)?)?;
                 Ok(status)
             }
             None => bail!(NoSuchScriptForCurrentTree),
         }
+    }
+
+    pub fn query_tree_root(&self, id: i64) -> anyhow::Result<String> {
+        self.conn.query_row_and_then(
+            "SELECT root FROM trees WHERE _rowid_=?",
+            params![id],
+            |row| {
+                let root: String = row.get(0)?;
+                Ok(root)
+            },
+        )
     }
 
     pub fn blob_is_null(&self, id: i64) -> anyhow::Result<bool> {
