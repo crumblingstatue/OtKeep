@@ -6,7 +6,6 @@ use {
         collections::HashSet,
         ffi::OsStr,
         path::{Path, PathBuf},
-        process::ExitStatus,
     },
     thiserror::Error,
 };
@@ -77,12 +76,11 @@ impl Database {
         tree_id: i64,
         name: &str,
         args: impl Iterator<Item = impl AsRef<OsStr>>,
-    ) -> anyhow::Result<ExitStatus> {
+    ) -> anyhow::Result<!> {
         match self.query_script_id_from_name(tree_id, name)? {
             Some(id) => {
                 let script = self.fetch_blob(id)?;
-                let status = crate::run::run_script(&script, args, self.query_tree_root(tree_id)?)?;
-                Ok(status)
+                crate::run::run_script(&script, args, self.query_tree_root(tree_id)?)
             }
             None => bail!(NoSuchScriptForCurrentTree),
         }

@@ -1,3 +1,5 @@
+#![feature(never_type)]
+
 use {
     anyhow::{bail, Context},
     otkeep::{database::NoSuchScriptForCurrentTree, AppContext},
@@ -6,7 +8,6 @@ use {
 
 fn main() {
     match try_main() {
-        Ok(code) => std::process::exit(code),
         Err(e) => {
             eprintln!("Error: {:?}", e);
             std::process::exit(1);
@@ -14,7 +15,7 @@ fn main() {
     }
 }
 
-fn try_main() -> anyhow::Result<i32> {
+fn try_main() -> anyhow::Result<!> {
     let mut args = std::env::args_os().skip(1);
     let db = otkeep::load_db()?;
     let root_id = match otkeep::find_root(&db)? {
@@ -31,7 +32,7 @@ fn try_main() -> anyhow::Result<i32> {
         None => {
             otkeep::list_scripts(&app)?;
             eprintln!("\nFor more options, try okeep",);
-            return Ok(1);
+            std::process::exit(1);
         }
     };
     run(
@@ -46,15 +47,14 @@ fn run(
     name: &str,
     ctx: &mut AppContext,
     args: impl Iterator<Item = impl AsRef<OsStr>>,
-) -> anyhow::Result<i32> {
+) -> anyhow::Result<!> {
     match ctx.db.run_script(ctx.root_id, name, args) {
-        Ok(status) => Ok(status.code().unwrap_or(1)),
         Err(e) => match e.downcast_ref::<NoSuchScriptForCurrentTree>() {
             Some(_) => {
                 eprintln!("No script named '{}' for the current tree.\n", name);
                 otkeep::list_scripts(ctx)?;
                 eprintln!("\nFor more options, try okeep");
-                Ok(1)
+                std::process::exit(1)
             }
             None => Err(e),
         },
