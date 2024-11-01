@@ -1,29 +1,29 @@
 use std::{
     ffi::OsStr,
-    fs::OpenOptions,
     io::Write,
-    os::unix::{fs::OpenOptionsExt, process::CommandExt},
+    os::{fd::FromRawFd, unix::process::CommandExt},
     process::Command,
 };
-
-const MODE_EXEC: u32 = 0o755;
 
 pub(crate) fn run_script(
     script: &[u8],
     args: impl Iterator<Item = impl AsRef<OsStr>>,
     tree_root: impl AsRef<OsStr>,
 ) -> anyhow::Result<!> {
-    let temp_dir = temp_dir::TempDir::new()?;
-    let path = temp_dir.child("script");
-    let mut f = OpenOptions::new()
-        .create(true)
-        .write(true)
-        .mode(MODE_EXEC)
-        .open(&path)?;
+    extern "C" {
+        fn memfd_create(name: *const std::ffi::c_char, flags: std::ffi::c_uint) -> std::ffi::c_int;
+    }
+    let fd = unsafe { memfd_create(c"otkeep-script".as_ptr(), 0) };
+    if fd == -1 {
+        anyhow::bail!("memfd_create failed when trying to create script file");
+    }
+    let mut f = unsafe { std::fs::File::from_raw_fd(fd) };
     f.write_all(script)?;
-    Err(Command::new(path)
+    f.flush()?;
+    let err = Command::new(format!("/proc/self/fd/{fd}"))
         .env("OTKEEP_TREE_ROOT", tree_root)
         .args(args)
         .exec()
-        .into())
+        .into();
+    Err(err)
 }
