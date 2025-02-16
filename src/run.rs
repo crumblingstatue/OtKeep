@@ -10,7 +10,7 @@ pub(crate) fn run_script(
     args: impl Iterator<Item = impl AsRef<OsStr>>,
     tree_root: impl AsRef<OsStr>,
 ) -> anyhow::Result<!> {
-    extern "C" {
+    unsafe extern "C" {
         fn memfd_create(name: *const std::ffi::c_char, flags: std::ffi::c_uint) -> std::ffi::c_int;
     }
     let fd = unsafe { memfd_create(c"otkeep-script".as_ptr(), 0) };

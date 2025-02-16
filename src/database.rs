@@ -1,7 +1,7 @@
 use {
     crate::fs_util::ensure_dir_exists,
     anyhow::bail,
-    rusqlite::{named_params, params, Connection, OptionalExtension},
+    rusqlite::{Connection, OptionalExtension, named_params, params},
     std::{
         collections::HashSet,
         ffi::OsStr,

@@ -1,8 +1,8 @@
 #![feature(never_type)]
 
 use {
-    anyhow::{bail, Context},
-    otkeep::{database::NoSuchScriptForCurrentTree, AppContext},
+    anyhow::{Context, bail},
+    otkeep::{AppContext, database::NoSuchScriptForCurrentTree},
     std::ffi::OsStr,
 };
 

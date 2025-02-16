@@ -1,5 +1,5 @@
 use {
-    anyhow::{bail, Context},
+    anyhow::{Context, bail},
     clap::{Parser, Subcommand},
     otkeep::AppContext,
     std::path::PathBuf,
@@ -311,8 +311,8 @@ fn help_msg() {
 
 mod cmd {
     use {
-        anyhow::{bail, Context},
-        otkeep::{database::Database, AppContext},
+        anyhow::{Context, bail},
+        otkeep::{AppContext, database::Database},
         owo_colors::{OwoColorize, Style},
         std::path::Path,
     };
