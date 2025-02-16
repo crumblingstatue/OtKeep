@@ -69,7 +69,10 @@ pub fn checkout(name: &str, ctx: &mut AppContext) -> anyhow::Result<()> {
 }
 
 pub fn cat(name: &str, ctx: &mut AppContext) -> anyhow::Result<()> {
-    let script = ctx.db.get_script_by_name(ctx.root_id, name)?;
+    let script = ctx
+        .db
+        .get_script_by_name(ctx.root_id, name)
+        .or_else(|_| ctx.db.get_file_by_name(ctx.root_id, name))?;
     std::io::stdout().write_all(&script)?;
     Ok(())
 }
