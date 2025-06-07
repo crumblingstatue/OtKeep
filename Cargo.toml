@@ -21,3 +21,8 @@ owo-colors = "4.2.0"
 [dependencies.rusqlite]
 version = "0.36.0"
 features = ["bundled"]
+
+[profile.release]
+panic = "abort"
+lto = "thin"
+strip = "symbols"
