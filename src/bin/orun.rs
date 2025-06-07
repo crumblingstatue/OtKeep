@@ -9,7 +9,7 @@ use {
 fn main() {
     match try_main() {
         Err(e) => {
-            eprintln!("Error: {:?}", e);
+            eprintln!("Error: {e:?}");
             std::process::exit(1);
         }
     }
@@ -51,7 +51,7 @@ fn run(
     match ctx.db.run_script(ctx.root_id, name, args) {
         Err(e) => match e.downcast_ref::<NoSuchScriptForCurrentTree>() {
             Some(_) => {
-                eprintln!("No script named '{}' for the current tree.\n", name);
+                eprintln!("No script named '{name}' for the current tree.\n");
                 otkeep::list_scripts(ctx)?;
                 eprintln!("\nFor more options, try okeep");
                 std::process::exit(1)

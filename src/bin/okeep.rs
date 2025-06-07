@@ -378,7 +378,7 @@ mod cmd {
         if let Some(description) = desc {
             ctx.db
                 .add_script_description(ctx.root_id, name, description)?;
-            eprintln!("{} => {}", name, description);
+            eprintln!("{name} => {description}");
             modded = true;
         }
         if !modded {
@@ -389,9 +389,9 @@ mod cmd {
 
     pub fn remove(ctx: &mut AppContext, name: &str) -> anyhow::Result<()> {
         if ctx.db.remove_script(ctx.root_id, name)? {
-            eprintln!("Removed script '{}'", name);
+            eprintln!("Removed script '{name}'");
         } else {
-            eprintln!("Didn't remove anything. '{}' probably doesn't exist.", name);
+            eprintln!("Didn't remove anything. '{name}' probably doesn't exist.");
         }
         Ok(())
     }
