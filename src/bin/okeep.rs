@@ -121,7 +121,7 @@ enum PruneSubCmd {
 }
 
 fn main() -> anyhow::Result<()> {
-    let db = otkeep::load_db()?;
+    let mut db = otkeep::load_db()?;
     let opt_root = otkeep::find_root(&db)?;
     let Some(subcommand) = Args::parse().subcommand else {
         match opt_root {
@@ -164,6 +164,62 @@ fn main() -> anyhow::Result<()> {
             );
             return Ok(());
         }
+        Sub::Prune(PruneSubCmd::Trees) => {
+            let mut any_was_stray = false;
+            for root in db.get_tree_roots()? {
+                if !root.path.exists() {
+                    any_was_stray = true;
+                    eprintln!("`{}` has the following scripts: ", root.path.display());
+                    for script in db.scripts_for_tree(root.id)? {
+                        eprintln!("{}", script.name);
+                    }
+                    let files = db.files_for_tree(root.id)?;
+                    if !files.is_empty() {
+                        eprintln!("... and following files: ");
+                        for file in files {
+                            eprintln!("{}", file.name);
+                        }
+                    }
+                    eprintln!("Remove? (y/n)");
+                    let mut ans_line = String::new();
+                    std::io::stdin().read_line(&mut ans_line)?;
+                    let ans = ans_line.trim();
+                    if ans == "y" {
+                        db.remove_tree(root.id)?;
+                    }
+                }
+            }
+            if !any_was_stray {
+                eprintln!("No stray roots were detected.");
+            }
+        }
+        Sub::Prune(PruneSubCmd::Blobs) => {
+            let mut any_was_stray_and_nonnull = false;
+            let tree_blob_refs = db.tree_script_blob_ids()?;
+            let len = db.blobs_table_len()?;
+            for rowid in 1..=len {
+                if !tree_blob_refs.contains(&rowid) {
+                    if db.blob_is_null(rowid)? {
+                        continue;
+                    }
+                    any_was_stray_and_nonnull = true;
+                    let data = db.fetch_blob(rowid)?;
+                    let s = String::from_utf8_lossy(&data);
+                    eprintln!("Unreferenced blob:");
+                    eprintln!("{s}");
+                    eprintln!("Remove? (y/n)");
+                    let mut ans_line = String::new();
+                    std::io::stdin().read_line(&mut ans_line)?;
+                    let ans = ans_line.trim();
+                    if ans == "y" {
+                        db.nullify_blob(rowid)?;
+                    }
+                }
+            }
+            if !any_was_stray_and_nonnull {
+                eprintln!("No stray blobs were detected.");
+            }
+        }
         _ => {}
     }
 
@@ -177,6 +233,8 @@ fn main() -> anyhow::Result<()> {
 
     let mut app = AppContext { db, root_id };
     match subcommand {
+        // We matched against these eariler
+        Sub::Establish | Sub::Reestablish { .. } | Sub::ListTrees | Sub::Prune(_) => unreachable!(),
         Sub::Add {
             name,
             script,
@@ -188,7 +246,6 @@ fn main() -> anyhow::Result<()> {
             cmd::mod_(&mut app, &name, desc.as_deref()).context("Mod failed")?
         }
         Sub::Remove { name } => cmd::remove(&mut app, &name).context("Failed to remove script")?,
-        Sub::Establish | Sub::Reestablish { .. } => unreachable!(),
         Sub::Unestablish => {
             if std::env::current_dir()? != root_path {
                 eprintln!("The current directory is not the root.");
@@ -199,7 +256,6 @@ fn main() -> anyhow::Result<()> {
             cmd::unestablish(&mut app).context("Failed to unestablish current directory")?;
             eprintln!("Unestablished {}", root_path.display());
         }
-        Sub::ListTrees => unreachable!(),
         Sub::Checkout { name } => cmd::checkout(&mut app, &name).context("Checkout failed")?,
         Sub::Cat { name } => cmd::cat(&mut app, &name).context("Cat failed")?,
         Sub::Update {
@@ -244,62 +300,6 @@ fn main() -> anyhow::Result<()> {
             std::process::Command::new(editor).arg(&filepath).status()?;
             let blob = std::fs::read(&filepath)?;
             app.db.update_script(root_id, &name, blob)?;
-        }
-        Sub::Prune(PruneSubCmd::Trees) => {
-            let mut any_was_stray = false;
-            for root in app.db.get_tree_roots()? {
-                if !root.path.exists() {
-                    any_was_stray = true;
-                    eprintln!("`{}` has the following scripts: ", root.path.display());
-                    for script in app.db.scripts_for_tree(root.id)? {
-                        eprintln!("{}", script.name);
-                    }
-                    let files = app.db.files_for_tree(root.id)?;
-                    if !files.is_empty() {
-                        eprintln!("... and following files: ");
-                        for file in files {
-                            eprintln!("{}", file.name);
-                        }
-                    }
-                    eprintln!("Remove? (y/n)");
-                    let mut ans_line = String::new();
-                    std::io::stdin().read_line(&mut ans_line)?;
-                    let ans = ans_line.trim();
-                    if ans == "y" {
-                        app.db.remove_tree(root.id)?;
-                    }
-                }
-            }
-            if !any_was_stray {
-                eprintln!("No stray roots were detected.");
-            }
-        }
-        Sub::Prune(PruneSubCmd::Blobs) => {
-            let mut any_was_stray_and_nonnull = false;
-            let tree_blob_refs = app.db.tree_script_blob_ids()?;
-            let len = app.db.blobs_table_len()?;
-            for rowid in 1..=len {
-                if !tree_blob_refs.contains(&rowid) {
-                    if app.db.blob_is_null(rowid)? {
-                        continue;
-                    }
-                    any_was_stray_and_nonnull = true;
-                    let data = app.db.fetch_blob(rowid)?;
-                    let s = String::from_utf8_lossy(&data);
-                    eprintln!("Unreferenced blob:");
-                    eprintln!("{s}");
-                    eprintln!("Remove? (y/n)");
-                    let mut ans_line = String::new();
-                    std::io::stdin().read_line(&mut ans_line)?;
-                    let ans = ans_line.trim();
-                    if ans == "y" {
-                        app.db.nullify_blob(rowid)?;
-                    }
-                }
-            }
-            if !any_was_stray_and_nonnull {
-                eprintln!("No stray blobs were detected.");
-            }
         }
     }
     Ok(())
