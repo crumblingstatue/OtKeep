@@ -192,6 +192,7 @@ fn main() -> anyhow::Result<()> {
             if !any_was_stray {
                 eprintln!("No stray roots were detected.");
             }
+            return Ok(());
         }
         Sub::Prune(PruneSubCmd::Blobs) => {
             let mut any_was_stray_and_nonnull = false;
@@ -219,6 +220,7 @@ fn main() -> anyhow::Result<()> {
             if !any_was_stray_and_nonnull {
                 eprintln!("No stray blobs were detected.");
             }
+            return Ok(());
         }
         _ => {}
     }
