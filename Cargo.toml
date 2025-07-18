@@ -19,7 +19,7 @@ paths-as-strings = "0.1.1"
 owo-colors = "4.2.0"
 
 [dependencies.rusqlite]
-version = "0.36.0"
+version = "0.37.0"
 features = ["bundled"]
 
 [profile.release]
