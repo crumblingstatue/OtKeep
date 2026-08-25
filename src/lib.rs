@@ -1,5 +1,3 @@
-#![feature(never_type)]
-
 use {
     crate::database::ScriptInfo,
     anyhow::Context,

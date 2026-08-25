@@ -1,5 +1,3 @@
-#![feature(never_type)]
-
 use {
     anyhow::{Context, bail},
     otkeep::{AppContext, database::NoSuchScriptForCurrentTree},
